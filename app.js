@@ -84,11 +84,11 @@ app.route("/items")
     
 })
 
-//specific items
+// ---------------- specific items ---------------- //
 
 app.route("/items/:itemName")
 
-.get((req,res)=> {
+.get((req,res) => {
     Item.findOne({item: req.params.itemName}, (err,foundItem)=> {
         if(!err && foundItem) {
             res.send(foundItem)
@@ -108,7 +108,37 @@ app.route("/items/:itemName")
     })
 })
 
+.put((req,res) => {
+    Item.findOneAndUpdate(
+        {item:req.params.itemName},
+        {item:req.body.item, des:req.body.des},
+        {overwrite:true},
+        (err,results) => {
+            if (!err) {
+                res.redirect("/items/" + req.body.item);
+            } else {
+                res.send(err);
+            }
+        }
+    )
+})
 
+.patch((req,res) => {
+
+    Item.findOneAndUpdate(
+        {item:req.params.itemName},
+        {item: req.body.item, des: req.body.des},
+        err => {
+            if (err) {
+                res.send(err);
+            } else {
+                res.send("Succuessfully Patched.")
+            }
+        }
+    )
+
+    // $set{req.body}
+});
 
 app.listen(3000, function(err) {
     console.log("...Running on 3000.");
