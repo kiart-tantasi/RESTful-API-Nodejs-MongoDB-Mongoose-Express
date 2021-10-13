@@ -46,7 +46,7 @@ app.route("/items")
                     }
                 })
 
-                res.send("No Items, Default Items were Added. Please Refresh to Restore Default Items.")
+                res.send("No Items. Please Refresh to See the Default Items that were Just Added in 'GET'.")
 
             } else {
                 res.send(foundItems);
@@ -61,6 +61,7 @@ app.route("/items")
     Item.deleteMany(err => {
         if (!err) {
             res.redirect("/items");
+            console.log("All Items were Deleted.")
         } else {
             res.send(err);
         }
@@ -103,7 +104,8 @@ app.route("/items/:itemName")
 .delete((req,res)=> {
     Item.deleteOne({name: req.params.itemName}, err => {
         if (!err) {
-            res.send("One Item was Successfully Deleted.")
+            console.log("One Specific Item was Deleted.")
+            res.redirect("/items");
         }
     })
 })
@@ -116,6 +118,7 @@ app.route("/items/:itemName")
         (err,results) => {
             if (!err) {
                 res.redirect("/items/" + req.body.item);
+                console.log("One Specific Item was Updated with 'PUT'.");
             } else {
                 res.send(err);
             }
@@ -127,21 +130,22 @@ app.route("/items/:itemName")
 
     Item.findOneAndUpdate(
         {item:req.params.itemName},
-        {item: req.body.item, des: req.body.des},
+        {item: req.body.item, des: req.body.des},    // $set{req.body}
         err => {
             if (err) {
                 res.send(err);
             } else {
-                res.send("Succuessfully Patched.")
+                res.redirect("/items/" + req.body.item);
+                console.log("One Specific Item was Updated with 'PATCH'.");
             }
         }
     )
 
-    // $set{req.body}
+
 });
 
 app.listen(3000, function(err) {
-    console.log("...Running on 3000.");
+    console.log("...Running on 3000...");
     if (err) {
         console.log(err);
     }
