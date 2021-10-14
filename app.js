@@ -144,8 +144,8 @@ app.route("/items/:itemName")
 
 });
 
-app.listen(3000, function(err) {
-    console.log("...Running on 3000...");
+app.listen(5000, function(err) {
+    console.log("...Running on 5000...");
     if (err) {
         console.log(err);
     }
