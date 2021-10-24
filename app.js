@@ -1,11 +1,14 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const bP = require("body-parser");
+// const cors = require("cors");
+// const axios = require("axios");
 
 const app = express();
 
 app.use(bP.urlencoded({extended:false}));
 app.use(bP.json());
+// app.use(cors());
 
 mongoose.connect("mongodb://localhost:27017/testDB");
 
@@ -23,6 +26,7 @@ app.get("", function(req,res) {
 app.route("/items")
 
 .get((req,res) => {
+
     Item.find((err,foundItems)=> {
         if(!err) {
             if (foundItems.length === 0) {
@@ -102,7 +106,7 @@ app.route("/items/:itemName")
 })
 
 .delete((req,res)=> {
-    Item.deleteOne({name: req.params.itemName}, err => {
+    Item.deleteOne({item: req.params.itemName}, err => {
         if (!err) {
             console.log("One Specific Item was Deleted.")
             res.redirect("/items");
@@ -111,13 +115,18 @@ app.route("/items/:itemName")
 })
 
 .put((req,res) => {
+    if (!req.body.item || !req.body.des) {
+        res.send("Please define new item name and description.")
+        return;
+    }
+    const newName = req.body.item;
     Item.findOneAndUpdate(
         {item:req.params.itemName},
-        {item:req.body.item, des:req.body.des},
+        {item:newName, des:req.body.des},
         {overwrite:true},
         (err,results) => {
             if (!err) {
-                res.redirect("/items/" + req.body.item);
+                res.redirect("/items/" + newName);
                 console.log("One Specific Item was Updated with 'PUT'.");
             } else {
                 res.send(err);
@@ -129,13 +138,13 @@ app.route("/items/:itemName")
 .patch((req,res) => {
 
     Item.findOneAndUpdate(
-        {item:req.params.itemName},
+        {item: req.params.itemName},
         {item: req.body.item, des: req.body.des},    // $set{req.body}
         err => {
             if (err) {
                 res.send(err);
             } else {
-                res.redirect("/items/" + req.body.item);
+                res.redirect("/items/" + req.params.itemName);
                 console.log("One Specific Item was Updated with 'PATCH'.");
             }
         }
@@ -144,9 +153,11 @@ app.route("/items/:itemName")
 
 });
 
+const port = process.env.PORT || 5000;
 app.listen(5000, function(err) {
-    console.log("...Running on 5000...");
     if (err) {
         console.log(err);
+    } else {
+        console.log(`running on PORT ${port}`);
     }
 })
