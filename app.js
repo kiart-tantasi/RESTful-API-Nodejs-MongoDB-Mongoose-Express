@@ -20,7 +20,8 @@ const itemSchema = {
 const Item = mongoose.model("Item",itemSchema);
 
 app.get("", function(req,res) {
-    res.send("Please use route '/items' ")
+    console.log("Redirected to /items")
+    res.redirect("/items");
 })
 
 app.route("/items")
