@@ -1,14 +1,11 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const bP = require("body-parser");
-// const cors = require("cors");
-// const axios = require("axios");
 
 const app = express();
 
 app.use(bP.urlencoded({extended:false}));
 app.use(bP.json());
-// app.use(cors());
 
 mongoose.connect("mongodb://localhost:27017/testDB");
 
