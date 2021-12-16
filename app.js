@@ -1,87 +1,70 @@
+// EXPRESS
 const express = require("express");
-const mongoose = require("mongoose");
-const bP = require("body-parser");
-
 const app = express();
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
 
-app.use(bP.urlencoded({extended:false}));
-app.use(bP.json());
+// MONGOOSE SETUP
+const mongoose = require("mongoose");
+mongoose.connect("mongodb://localhost:27017/mongooseDB"); // <-- DEFINE NAME OF DATABASE HERE
+const itemSchema = mongoose.Schema({ item: String, des: String});
+const Item = mongoose.model("Item", itemSchema);
 
-mongoose.connect("mongodb://localhost:27017/testDB");
-
-const itemSchema = {
-    item: String,
-    des: String
-};
-
-const Item = mongoose.model("Item",itemSchema);
-
-app.get("", function(req,res) {
-    console.log("Redirected to /items")
-    res.redirect("/items");
-})
-
+// ROUTES
 app.route("/items")
 
 .get((req,res) => {
-
-    Item.find((err,foundItems)=> {
-        if(!err) {
+    Item.find({}, (err,foundItems)=> {
+        if (err) {
+            console.log(err);
+        } else {
             if (foundItems.length === 0) {
 
-                const defaultItems = [{
-                    item: "Testing",
-                    des: "For Testing."
-                }, {
-                    item: "Testing2",
-                    des: "For Testing 2."
-                }, {
-                    item: "Testing3",
-                    des: "For Testing 3."
-                }];
-
+                const defaultItems = [
+                    {item: "Item 1", des: "Testing1"},
+                    {item: "Item 2", des: "Testing2"},
+                    {item: "Item 3", des: "Testing3"}
+                ];
                 Item.insertMany(defaultItems, err=> {
                     if (err) {
                         console.log(err);
                     } else {
-                        console.log("Default Added.")
+                        console.log("Since there were no items, default items were added.")
+                        res.redirect("/items");
                     }
                 })
-
-                res.send("No Items. Please Refresh to See the Default Items that were Just Added in 'GET'.")
-
             } else {
                 res.send(foundItems);
             }
-        } else {
-            res.send(err);
         }
     });
 })
 
+// DELETE ALL ITEMS
 .delete((req,res) => {
-    Item.deleteMany(err => {
-        if (!err) {
-            res.redirect("/items");
-            console.log("All Items were Deleted.")
+    Item.deleteMany((err) => {
+        if (err) {
+            console.log(err)
         } else {
-            res.send(err);
+            console.log("All Items were Deleted.")
+            res.sendStatus(200);
         }
     })
 })
 
+// ADD A NEW ITEM
 .post((req,res) => {
-
+    const item = req.body.item;
+    const des = req.body.des;
     const saveNewItem = new Item({
-        item: req.body.item,
-        des: req.body.des
+        item: item,
+        des: des
     });
-
-    saveNewItem.save(err => {
-        if (!err){
-            res.redirect("/items");
+    saveNewItem.save((err) => {
+        if (err){
+            console.log(err);
         } else {
-            res.send(err);
+            res.sendStatus(200);
         }
     });
     
@@ -89,73 +72,83 @@ app.route("/items")
 
 // ---------------- specific items ---------------- //
 
-app.route("/items/:itemName")
+app.route("/items/:itemId")
 
+//GET SPECIFIC ITEM
 .get((req,res) => {
-    Item.findOne({item: req.params.itemName}, (err,foundItem)=> {
-        if(!err && foundItem) {
-            res.send(foundItem)
-        } else if (!foundItem) {
+    const itemId = req.params.itemId;
+    Item.findOne({_id: itemId}, (err, result)=> {
+        if (err) {
+            console.log(err);
+        } else if (result) {
+            res.send(result)
+        } else if (result.length === 0 || result === null) {
             res.send("No Matching Item.")
-        } else {
-            res.end(err)
         }
     })
 })
 
+// DELETE SPECIFIC ITEM
 .delete((req,res)=> {
-    Item.deleteOne({item: req.params.itemName}, err => {
-        if (!err) {
+    const itemId = req.params.itemId;
+    Item.deleteOne({_id: itemId}, err => {
+        if (err) {
+            console.log(err);
+        } else {
             console.log("One Specific Item was Deleted.")
-            res.redirect("/items");
+            res.sendStatus(200);
         }
     })
 })
 
+// UPDATE THE WHOLE THING
 .put((req,res) => {
     if (!req.body.item || !req.body.des) {
-        res.send("Please define new item name and description.")
-        return;
-    }
-    const newName = req.body.item;
-    Item.findOneAndUpdate(
-        {item:req.params.itemName},
-        {item:newName, des:req.body.des},
-        {overwrite:true},
-        (err,results) => {
-            if (!err) {
-                res.redirect("/items/" + newName);
-                console.log("One Specific Item was Updated with 'PUT'.");
-            } else {
-                res.send(err);
+        res.sendStatus(403);
+    } else {
+        const itemId = req.params.itemId;
+        const newName = req.body.item;
+        const newDes = req.body.des;
+        Item.findOneAndUpdate(
+            {_id: itemId},
+            {item:newName, des:newDes},
+            {overwrite:true},
+            (err) => {
+                if (err) {
+                    console.log(err)
+                } else {
+                    console.log("One specific item was put.");
+                    res.sendStatus(200);
+                }
             }
-        }
-    )
+        )
+    }
 })
 
+// UPDATE ONLY DESCRIPTION
 .patch((req,res) => {
+    const itemId = req.params.itemId;
+    const newDes = req.body.des;
 
     Item.findOneAndUpdate(
-        {item: req.params.itemName},
-        {item: req.body.item, des: req.body.des},    // $set{req.body}
-        err => {
+        {_id: itemId},
+        {des: newDes},
+        (err) => {
             if (err) {
-                res.send(err);
+                console.log(err);
             } else {
-                res.redirect("/items/" + req.params.itemName);
-                console.log("One Specific Item was Updated with 'PATCH'.");
+                console.log("One specific item was patched.");
+                res.sendStatus(200);
             }
         }
     )
-
-
 });
 
-const port = process.env.PORT || 5000;
-app.listen(5000, function(err) {
+const port = process.env.port || 3000;
+app.listen(port, err => {
     if (err) {
         console.log(err);
     } else {
-        console.log(`running on PORT ${port}`);
+        console.log("Running on", port);
     }
 })
